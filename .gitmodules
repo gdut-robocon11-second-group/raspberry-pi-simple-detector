@@ -1,0 +1,6 @@
+[submodule "asio"]
+	path = asio
+	url = https://github.com/chriskohlhoff/asio.git
+[submodule "espeak-ng"]
+	path = espeak-ng
+	url = https://github.com/espeak-ng/espeak-ng.git
