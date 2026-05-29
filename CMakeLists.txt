@@ -11,8 +11,6 @@ endif()
 
 find_package(OpenCV REQUIRED)
 
-add_subdirectory(espeak-ng)
-
 add_library(asio INTERFACE)
 target_include_directories(asio INTERFACE ${CMAKE_SOURCE_DIR}/asio/include)
 
@@ -26,7 +24,4 @@ add_executable(raspberry-pi-simple-detector
 target_include_directories(raspberry-pi-simple-detector PRIVATE ${OpenCV_INCLUDE_DIRS})
 target_link_libraries(raspberry-pi-simple-detector PRIVATE
     asio
-    espeak-ng
     ${OpenCV_LIBS})
-target_compile_definitions(raspberry-pi-simple-detector PRIVATE
-    PATH_ESPEAK_DATA="${CMAKE_SOURCE_DIR}/espeak-ng/espeak-ng-data")
