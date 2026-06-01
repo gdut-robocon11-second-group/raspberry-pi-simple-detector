@@ -78,59 +78,6 @@ protected:
   }
 };
 
-class crc8_algorithm : public verify_algorithm<crc8_algorithm> {
-protected:
-  friend verify_algorithm<crc8_algorithm>;
-
-  template <typename ConstIt, typename It>
-  void calculate_code_impl(ConstIt begin, ConstIt end, It code_loc) noexcept {
-    It crc = code_loc; // CRC located in last byte of message
-    uint8_t currentByte;
-    *crc = 0;
-    for (auto i = begin; i != end; i++) { // Execute for all bytes of a message
-      if (i == crc) {
-        continue;
-      }
-      currentByte = *i; // Retrieve a byte to be sent from Array
-      for (int j = 0; j < 8; j++) {
-        if ((*crc >> 7) ^
-            (currentByte & 0x01)) // update CRC based result of XOR operation
-        {
-          *crc = (*crc << 1) ^ 0x07;
-        } else {
-          *crc = (*crc << 1);
-        }
-        currentByte = currentByte >> 1;
-      } // for CRC bit
-    } // for message byte
-  }
-
-  template <typename It>
-  bool verify_code_impl(It begin, It end, It code_loc) noexcept {
-    uint8_t crc_val = 0;
-    uint8_t* crc = &crc_val; // CRC located in last byte of message
-    uint8_t currentByte;
-    *crc = 0;
-    for (auto i = begin; i != end; i++) { // Execute for all bytes of a message
-      if (i == crc) {
-        continue;
-      }
-      currentByte = *i; // Retrieve a byte to be sent from Array
-      for (int j = 0; j < 8; j++) {
-        if ((*crc >> 7) ^
-            (currentByte & 0x01)) // update CRC based result of XOR operation
-        {
-          *crc = (*crc << 1) ^ 0x07;
-        } else {
-          *crc = (*crc << 1);
-        }
-        currentByte = currentByte >> 1;
-      } // for CRC bit
-    } // for message byte
-    return crc_val == *code_loc;
-  }
-};
-
 class crc16_algorithm : public verify_algorithm<crc16_algorithm> {
 protected:
   friend verify_algorithm<crc16_algorithm>;
