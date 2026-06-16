@@ -1,11 +1,12 @@
 #pragma once
 
 #include <array>
-#include <cstring>
 #include <bit>
+#include <cstring>
 #include <stdexcept>
 #include <tuple>
 #include <type_traits>
+
 
 template <typename... Args> struct get_size {};
 
@@ -80,7 +81,8 @@ template <typename... Args> struct payload_structure {
                   std::is_same_v<std::decay_t<FormatArgs>, std::string> ||
                   std::is_convertible_v<std::decay_t<FormatArgs>, Args>) &&
                  ...)>>
-  static std::array<char, size> format(format_to_array_t, FormatArgs &&...args) {
+  static std::array<char, size> format(format_to_array_t,
+                                       FormatArgs &&...args) {
     using BufferType = std::array<char, size>;
     BufferType buffer{};
     std::size_t offset = 0;
@@ -91,7 +93,8 @@ template <typename... Args> struct payload_structure {
         write_to_buffer<BufferType, StructArgType>(buffer, offset, arg);
         offset += get_size_v<StructArgType>;
       } else if constexpr (is_array<ArgType>::value) {
-        write_array_to_buffer<BufferType, typename get_array_type<StructArgType>::type,
+        write_array_to_buffer<BufferType,
+                              typename get_array_type<StructArgType>::type,
                               get_array_size<StructArgType>::value>(
             buffer, offset, arg);
         offset += get_size_v<StructArgType>;
@@ -101,7 +104,8 @@ template <typename... Args> struct payload_structure {
         for (std::size_t i = 0; i < copy_size; ++i) {
           array[i] = convert_endian(arg[i]);
         }
-        write_array_to_buffer<BufferType, typename get_array_type<StructArgType>::type,
+        write_array_to_buffer<BufferType,
+                              typename get_array_type<StructArgType>::type,
                               get_array_size<StructArgType>::value>(
             buffer, offset, array);
         offset += get_array_size<StructArgType>::value;
@@ -134,7 +138,8 @@ template <typename... Args> struct payload_structure {
         write_to_buffer<BufferType, StructArgType>(buffer, offset, arg);
         offset += get_size_v<StructArgType>;
       } else if constexpr (is_array<ArgType>::value) {
-        write_array_to_buffer<BufferType, typename get_array_type<StructArgType>::type,
+        write_array_to_buffer<BufferType,
+                              typename get_array_type<StructArgType>::type,
                               get_array_size<StructArgType>::value>(
             buffer, offset, arg);
         offset += get_size_v<StructArgType>;
@@ -144,7 +149,8 @@ template <typename... Args> struct payload_structure {
         for (std::size_t i = 0; i < copy_size; ++i) {
           array[i] = convert_endian(arg[i]);
         }
-        write_array_to_buffer<BufferType, typename get_array_type<StructArgType>::type,
+        write_array_to_buffer<BufferType,
+                              typename get_array_type<StructArgType>::type,
                               get_array_size<StructArgType>::value>(
             buffer, offset, array);
         offset += get_array_size<StructArgType>::value;
@@ -157,9 +163,10 @@ template <typename... Args> struct payload_structure {
   }
 
   // 从二进制数据中解析出参数
-  template<typename BufferType,
-           typename = std::enable_if_t<std::is_same_v<BufferType, std::string> ||
-                                       std::is_same_v<BufferType, std::array<char, size>>>>
+  template <typename BufferType,
+            typename = std::enable_if_t<
+                std::is_convertible_v<BufferType, std::string_view> ||
+                std::is_same_v<BufferType, std::array<char, size>>>>
   static std::tuple<Args...> parse(const BufferType &buffer) {
     if (buffer.size() != size) {
       throw std::runtime_error("Invalid buffer size");
@@ -169,7 +176,8 @@ template <typename... Args> struct payload_structure {
       using ArgType = std::decay_t<decltype(arg)>;
       if constexpr (is_array<ArgType>::value) {
         auto array =
-            read_array_from_buffer<BufferType, typename get_array_type<ArgType>::type,
+            read_array_from_buffer<BufferType,
+                                   typename get_array_type<ArgType>::type,
                                    get_array_size<ArgType>::value>(buffer,
                                                                    offset);
         offset += get_size_v<ArgType>;
@@ -183,6 +191,15 @@ template <typename... Args> struct payload_structure {
     std::tuple<Args...> result;
     std::apply([&func](auto &&...args) { (..., (args = func(args))); }, result);
     return result;
+  }
+
+  template <typename It>
+  static std::tuple<Args...> parse(It buffer_begin, It buffer_end) {
+    if (std::distance(buffer_begin, buffer_end) != size) {
+      throw std::runtime_error("Invalid buffer size");
+    }
+    return parse(std::string_view(
+        reinterpret_cast<const char *>(&(*buffer_begin)), size));
   }
 
 protected:
@@ -217,7 +234,8 @@ protected:
                                                     std::size_t offset) {
     std::array<T, Size> array;
     for (std::size_t i = 0; i < Size; ++i) {
-      array[i] = read_from_buffer<BufferType, T>(buffer, offset + i * sizeof(T));
+      array[i] =
+          read_from_buffer<BufferType, T>(buffer, offset + i * sizeof(T));
     }
     return array;
   }

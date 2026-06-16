@@ -5,7 +5,6 @@
 
 #include <algorithm>
 #include <cstdint>
-#include <iterator>
 #include <limits>
 #include <memory>
 #include <memory_resource>
@@ -41,7 +40,7 @@ public:
   data_packet(std::pmr::memory_resource *mr = default_memory_resource())
       : m_data(mr) {}
 
-  template <std::input_iterator It>
+  template <typename It>
   data_packet(uint16_t code, It begin, It end, build_packet_t,
               std::pmr::memory_resource *mr = default_memory_resource())
       : m_data(mr) {
@@ -71,7 +70,7 @@ public:
     update_verification();
   }
 
-  template <std::random_access_iterator It>
+  template <typename It>
   data_packet(It begin, It end, from_whole_packet_t,
               std::pmr::memory_resource *mr = default_memory_resource())
       : m_data(mr) {
@@ -109,8 +108,9 @@ public:
   data_packet(const data_packet &packet,
               std::pmr::memory_resource *mr = default_memory_resource())
       : m_data(packet.m_data, mr) {}
-  data_packet(data_packet &&packet) noexcept
-      : m_data(std::move(packet.m_data)) {}
+  data_packet(data_packet &&packet, std::pmr::memory_resource *mr =
+                                        default_memory_resource()) noexcept
+      : m_data(std::move(packet.m_data), mr) {}
 
   data_packet &operator=(const data_packet &packet) {
     if (this != std::addressof(packet)) {
@@ -226,22 +226,7 @@ public:
   packet_manager() : m_receive_buffer(std::pmr::get_default_resource()) {}
   ~packet_manager() = default;
 
-  void set_send_function(
-      std::function<void(const std::uint8_t *, const std::uint8_t *)> func) {
-    m_send_function = std::move(func);
-  }
-
-  void set_receive_function(std::function<void(packet_t)> func) {
-    m_receive_function = std::move(func);
-  }
-
-  void send(const packet_t &packet) {
-    if (m_send_function && packet) {
-      m_send_function(packet.data(), packet.data() + packet.size());
-    }
-  }
-
-  template <std::input_iterator It> void receive(It begin, It end) {
+  template <typename It> void receive(It begin, It end) {
     m_receive_buffer.resize(m_receive_buffer.size() +
                             std::distance(begin, end));
     std::copy(begin, end, m_receive_buffer.end() - std::distance(begin, end));
@@ -285,9 +270,7 @@ public:
       }
       packet_t packet{packet_start, packet_start + size, from_whole_packet};
       if (packet) {
-        if (m_receive_function) {
-          m_receive_function(std::move(packet));
-        }
+        receivedPacketsQueue_.push(std::move(packet));
       }
       m_receive_buffer.erase(m_receive_buffer.begin(),
                              packet_start +
@@ -295,11 +278,20 @@ public:
     }
   }
 
+  bool has_packet() const noexcept { return !receivedPacketsQueue_.empty(); }
+
+  packet_t pop_packet() {
+    if (has_packet()) {
+      packet_t packet = std::move(receivedPacketsQueue_.front());
+      receivedPacketsQueue_.pop();
+      return packet;
+    }
+    throw std::runtime_error("No packet available");
+  }
+
 private:
-  std::function<void(const std::uint8_t *, const std::uint8_t *)>
-      m_send_function;
-  std::function<void(packet_t)> m_receive_function;
   std::pmr::vector<std::uint8_t> m_receive_buffer;
+  std::queue<packet_t> receivedPacketsQueue_;
 };
 
 } // namespace gdut
