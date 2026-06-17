@@ -4,21 +4,27 @@
 #include <asio.hpp>
 #include <opencv2/opencv.hpp>
 
-inline static int capture_device_index = 1;
+inline static int capture_device_index = 0;
+inline static std::string serial_port_name = "/dev/ttyAMA0";
 
 int main(int argc, char *argv[]) {
-  if (argc > 1) {
+  if (argc > 2) {
     try {
       capture_device_index = std::stoi(argv[1]);
+      serial_port_name = argv[2];
     } catch (const std::exception &e) {
-      std::cerr << "Invalid capture device index provided. Using default index "
-                   "1.\n";
+      std::cerr << "Invalid arguments. Usage: " << argv[0]
+                << " <capture_device_index> <serial_port_name>\n";
+      return 1;
     }
+  } else {
+    std::cerr << "Usage: " << argv[0] << " <capture_device_index> <serial_port_name>\n";
+    return 1;
   }
   try {
     asio::io_context io_context;
     cv::VideoCapture cap(capture_device_index);
-    detector_node node(io_context, cap, "/dev/ttyUSB0");
+    detector_node node(io_context, cap, serial_port_name);
     asio::post(io_context, [&]() {
       while (!cap.isOpened()) {
         std::cerr

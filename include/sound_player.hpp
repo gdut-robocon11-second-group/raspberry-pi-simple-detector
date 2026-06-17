@@ -4,8 +4,6 @@
 #include <filesystem>
 #include <stdexcept>
 
-#include "miniaudio.h"
-
 class sound_player {
 public:
   static sound_player &get_instance() {
@@ -14,21 +12,20 @@ public:
   }
 
   bool play_sound(const std::filesystem::path &path) {
-    return ma_engine_play_sound(&m_engine, path.string().c_str(), NULL) ==
-           MA_SUCCESS;
+    if (!std::filesystem::exists(path)) {
+      return false;
+    }
+    std::system(std::string{"AUDIODEV=plughw:1,0 ffplay -nodisp -autoexit -af \"volume=0.5\" \""
+      + path.string() + "\""}.c_str());
+    return true;
   }
 
 protected:
-  sound_player() {
-    if (ma_engine_init(NULL, &m_engine) != MA_SUCCESS) {
-      throw std::runtime_error{"Could not initilize the maniaudio engine"};
-    }
-  }
+  sound_player() = default;
 
-  ~sound_player() { ma_engine_uninit(&m_engine); }
+  ~sound_player() = default;
 
 private:
-  ma_engine m_engine;
 };
 
 class voice_player {

@@ -11,8 +11,6 @@ endif()
 
 find_package(OpenCV REQUIRED)
 
-add_subdirectory(miniaudio)
-
 add_library(asio INTERFACE)
 target_include_directories(asio INTERFACE ${CMAKE_SOURCE_DIR}/asio/include)
 
@@ -28,6 +26,5 @@ target_include_directories(raspberry-pi-simple-detector PRIVATE
 )
 target_link_libraries(raspberry-pi-simple-detector PRIVATE
     asio
-    miniaudio
     ${OpenCV_LIBS}
 )
