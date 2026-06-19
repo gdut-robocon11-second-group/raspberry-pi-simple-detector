@@ -6,19 +6,22 @@
 
 inline static int capture_device_index = 0;
 inline static std::string serial_port_name = "/dev/ttyAMA0";
+inline static std::string audio_device_name = "plughw:1,0";
 
 int main(int argc, char *argv[]) {
-  if (argc > 2) {
+  if (argc > 3) {
     try {
       capture_device_index = std::stoi(argv[1]);
       serial_port_name = argv[2];
+      audio_device_name = argv[3];
+      sound_player::get_instance().set_audio_device(audio_device_name);
     } catch (const std::exception &e) {
       std::cerr << "Invalid arguments. Usage: " << argv[0]
-                << " <capture_device_index> <serial_port_name>\n";
+                << " <capture_device_index> <serial_port_name> <audio_device_name>\n";
       return 1;
     }
   } else {
-    std::cerr << "Usage: " << argv[0] << " <capture_device_index> <serial_port_name>\n";
+    std::cerr << "Usage: " << argv[0] << " <capture_device_index> <serial_port_name> <audio_device_name>\n";
     return 1;
   }
   try {

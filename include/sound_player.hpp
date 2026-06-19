@@ -15,9 +15,14 @@ public:
     if (!std::filesystem::exists(path)) {
       return false;
     }
-    std::system(std::string{"AUDIODEV=plughw:1,0 ffplay -nodisp -autoexit -af \"volume=0.5\" \""
+    std::system(std::string{"AUDIODEV=" + audio_device_name +
+      " ffplay -nodisp -autoexit -af \"volume=0.5\" \""
       + path.string() + "\""}.c_str());
     return true;
+  }
+
+  void set_audio_device(const std::string &device_name) {
+    audio_device_name = device_name;
   }
 
 protected:
@@ -26,6 +31,7 @@ protected:
   ~sound_player() = default;
 
 private:
+  std::string audio_device_name = "plughw:1,0";
 };
 
 class voice_player {
