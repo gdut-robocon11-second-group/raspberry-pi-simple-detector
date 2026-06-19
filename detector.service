@@ -1,0 +1,14 @@
+[Unit]
+Description=Detector Service
+After=network.target
+
+[Service]
+Type=simple
+User=qqof
+Group=qqof
+WorkingDirectory=/home/qqof/raspberry-pi-simple-detector
+ExecStart=/bin/bash -c '/home/qqof/raspberry-pi-simple-detector/build/raspberry-pi-simple-detector 0 /dev/serial0 plughw:3,0'
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

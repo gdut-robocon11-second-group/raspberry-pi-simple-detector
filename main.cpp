@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
   }
   try {
     asio::io_context io_context;
-    cv::VideoCapture cap(capture_device_index);
+    cv::VideoCapture cap(capture_device_index, cv::CAP_V4L2);
     detector_node node(io_context, cap, serial_port_name);
     asio::post(io_context, [&]() {
       while (!cap.isOpened()) {
@@ -34,12 +34,23 @@ int main(int argc, char *argv[]) {
             << "Failed to open video capture device. Retrying in 1 second..."
             << '\n';
         std::this_thread::sleep_for(std::chrono::seconds(1));
-        cap.open(capture_device_index);
+        cap.open(capture_device_index, cv::CAP_V4L2);
       }
+      cap.set(cv::CAP_PROP_BUFFERSIZE, 1);
+      cap.set(cv::CAP_PROP_FOURCC, cv::VideoWriter::fourcc('M', 'J', 'P', 'G'));
+      cap.set(cv::CAP_PROP_FRAME_WIDTH, 640);
+      cap.set(cv::CAP_PROP_FRAME_HEIGHT, 480);
+      cap.set(cv::CAP_PROP_FPS, 30);
       for (;;) {
         if (auto opt = node.detector().detectQRCode(); opt.has_value()) {
           if (opt.value().size() != 2) {
             continue; // Invalid QR code format, ignore
+          }
+          if (opt.value()[0] != '1' && opt.value()[0] != '2') {
+            continue; // Invalid goods code, ignore
+          }
+          if (opt.value()[1] != '1' && opt.value()[1] != '2') {
+            continue; // Invalid transportation code, ignore
           }
           std::cout << "Detected QR code: " << opt.value() << '\n';
           auto goods = (opt.value()[0] == '1')
