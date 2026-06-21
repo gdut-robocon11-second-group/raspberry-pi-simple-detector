@@ -151,6 +151,39 @@ public:
                                ? voice_player::Voice::Voice5
                                : voice_player::Voice::Voice6;
               voice_player::get_instance().play_voice(voice);
+              // Wait for 5 seconds to allow the user to see the departure station information
+              // before scanning for QR codes again
+              std::this_thread::sleep_for(std::chrono::seconds(5));
+              asio::post(io_context_, [&]() {
+                for (;;) {
+                  if (auto opt = this->detector_.detectQRCode(); opt.has_value()) {
+                    if (opt.value().size() != 2) {
+                      continue; // Invalid QR code format, ignore
+                    }
+                    if (opt.value()[0] != '1' && opt.value()[0] != '2') {
+                      continue; // Invalid goods code, ignore
+                    }
+                    if (opt.value()[1] != '1' && opt.value()[1] != '2') {
+                      continue; // Invalid transportation code, ignore
+                    }
+                    std::cout << "Detected QR code: " << opt.value() << '\n';
+                    auto goods = (opt.value()[0] == '1')
+                                    ? detector_node::goods_code::goods1
+                                    : detector_node::goods_code::goods2;
+                    auto transportation = (opt.value()[1] == '1')
+                                              ? detector_node::transportation::left
+                                              : detector_node::transportation::right;
+                    auto voice = (opt.value()[0] == '1') ? voice_player::Voice::Voice1
+                                                        : voice_player::Voice::Voice2;
+                    this->set_current_goods(goods);
+                    this->set_current_transportation(transportation);
+                    this->send_command<detector_node::command_code::send_open_door>(
+                        asio::detached, static_cast<std::uint8_t>(goods));
+                    voice_player::get_instance().play_voice(voice);
+                    return;
+                  }
+                }
+              });
               return;
             }
           }

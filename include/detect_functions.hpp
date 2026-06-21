@@ -11,10 +11,9 @@ public:
 
   std::optional<std::string> detectQRCode() {
     cv::Mat frame;
-    if (!cap_.grab()) {
-      return std::nullopt;
+    if (!cap_.read(frame)) {
+      return std::nullopt; // Failed to read a frame
     }
-    cap_.retrieve(frame);
 
     if (frame.empty()) {
       return std::nullopt;
@@ -37,10 +36,9 @@ public:
 
   std::optional<std::vector<cv::Point2f>> detectLine() {
     cv::Mat frame;
-    if (!cap_.grab()) {
-      return std::nullopt;
+    if (!cap_.read(frame)) {
+      return std::nullopt; // Failed to read a frame
     }
-    cap_.retrieve(frame);
 
     if (frame.empty()) {
       return std::nullopt;
@@ -81,10 +79,9 @@ public:
 
   TrafficLights detectTrafficLight() {
     cv::Mat frame;
-    if (!cap_.grab()) {
-      return TrafficLights::UNKNOWN;
+    if (!cap_.read(frame)) {
+      return TrafficLights::UNKNOWN; // Failed to read a frame
     }
-    cap_.retrieve(frame);
 
     if (frame.empty()) {
       return TrafficLights::UNKNOWN;

@@ -38,9 +38,6 @@ int main(int argc, char *argv[]) {
       }
       cap.set(cv::CAP_PROP_BUFFERSIZE, 1);
       cap.set(cv::CAP_PROP_FOURCC, cv::VideoWriter::fourcc('M', 'J', 'P', 'G'));
-      cap.set(cv::CAP_PROP_FRAME_WIDTH, 640);
-      cap.set(cv::CAP_PROP_FRAME_HEIGHT, 480);
-      cap.set(cv::CAP_PROP_FPS, 30);
       for (;;) {
         if (auto opt = node.detector().detectQRCode(); opt.has_value()) {
           if (opt.value().size() != 2) {
